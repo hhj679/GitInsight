@@ -1,0 +1,8 @@
+1、exist projects：
+	1)git clone下载项目代码
+	2)git log --stat>>{project_name}_logs{yyyymmdd}.logs获取日志
+	3)java代码解析log到mysql（区分commit和merge两种类型）
+	
+	4)每天使用git pull命令更新代码库
+	5)git log --stat --after yyyymmdd>>{project_name}_logs{yyyymmdd}.logs获取当天更新日志
+	6)java代码解析log到mysql（区分commit和merge两种类型）
