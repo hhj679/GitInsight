@@ -26,18 +26,63 @@ public class RequestProjects {
 					saveFile.mkdirs();
 				}
 				
+				int fileNo = 2;
+				
 				String repoJson = HtmlUtil.requestPageByGet("https://api.github.com/search/repositories?q=stars%3A%3E100+language%3A" 
 						+ language + "&sort=stars&order=desc&per_page=100&" + API_ACCESS_TOKEN, 
 					"D:\\gitinsight\\github\\data\\projects\\json\\" + language + "\\" + language + "_1" + ".json");
 				JSONObject jsonObj = JSONObject.fromObject(repoJson);
 				int total = jsonObj.getInt("total_count");
 				int totalPage = total/100 + 1;
-				for(int page = 2; page < totalPage; page++) {
-					HtmlUtil.requestPageByGet("https://api.github.com/search/repositories?q=stars%3A%3E100+language%3A" 
+				if(totalPage > 10) {
+					totalPage = 10;
+				}
+				
+				int stars = 100;
+				
+				for(int page = 2; page <= totalPage; page++) {
+					repoJson = HtmlUtil.requestPageByGet("https://api.github.com/search/repositories?q=stars%3A%3E100+language%3A" 
 							+ language + "&sort=stars&order=desc&per_page=100&page=" + page + "&" + API_ACCESS_TOKEN, 
-							"D:\\gitinsight\\github\\data\\projects\\json\\" + language + "\\" + language + "_" + page + ".json");
+							"D:\\gitinsight\\github\\data\\projects\\json\\" + language + "\\" + language + "_" + (fileNo++) + ".json");
+					
+					if(page == 10) {
+						jsonObj = JSONObject.fromObject(repoJson);
+						
+						JSONObject lastItem = (JSONObject) jsonObj.getJSONArray("items").get(99);
+						stars = lastItem.getInt("stargazers_count");
+					}
 					
 					Thread.sleep(1400);
+				}
+				while(totalPage == 10) {
+					repoJson = HtmlUtil.requestPageByGet("https://api.github.com/search/repositories?q=stars%3A<%3D" + stars + "+language%3A" 
+							+ language + "&sort=stars&order=desc&per_page=100&" + API_ACCESS_TOKEN, 
+						"D:\\gitinsight\\github\\data\\projects\\json\\" + language + "\\" + language + (fileNo++) + ".json");
+					jsonObj = JSONObject.fromObject(repoJson);
+					total = jsonObj.getInt("total_count");
+					totalPage = total/100 + 1;
+					if(totalPage > 10) {
+						totalPage = 10;
+					}
+					
+					for(int page = 2; page <= totalPage; page++) {
+						repoJson = HtmlUtil.requestPageByGet("https://api.github.com/search/repositories?q=stars%3A<%3D" + stars + "+language%3A" 
+								+ language + "&sort=stars&order=desc&per_page=100&page=" + page + "&" + API_ACCESS_TOKEN, 
+								"D:\\gitinsight\\github\\data\\projects\\json\\" + language + "\\" + language + "_" + (fileNo++) + ".json");
+						
+						if(page == 10) {
+							jsonObj = JSONObject.fromObject(repoJson);
+							
+							JSONObject lastItem = (JSONObject) jsonObj.getJSONArray("items").get(99);
+							stars = lastItem.getInt("stargazers_count");
+						}
+						
+						Thread.sleep(1400);
+					}
+					
+					if(stars < 100) {
+						break;
+					}
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
