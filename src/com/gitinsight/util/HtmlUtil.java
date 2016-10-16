@@ -11,6 +11,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -39,13 +41,15 @@ public class HtmlUtil {
 			conn.setDoOutput(true);
 			conn.setInstanceFollowRedirects(true);
 			conn.setRequestProperty("content-type", "text/html");
-
+			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
+			
 			conn.connect();
 			if(conn.getResponseCode()!=200){
 				return "";
 			}
 			
 			is = conn.getInputStream();
+			conn.getHeaderField("Link");
 
 			reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 			String s;
@@ -53,12 +57,68 @@ public class HtmlUtil {
 			while ((s = reader.readLine()) != null) {
 				sb.append(s); 
 			}
-			writerStream = new FileOutputStream(outputFile);    
-			bw = new BufferedWriter(new OutputStreamWriter(writerStream, "UTF-8"));
-			bw.write(sb.toString());
-			bw.flush();
+			
+			if(outputFile!=null && outputFile.length()>0) {
+				writerStream = new FileOutputStream(outputFile);    
+				bw = new BufferedWriter(new OutputStreamWriter(writerStream, "UTF-8"));
+				bw.write(sb.toString());
+				bw.flush();
+			}
 			
 			return sb.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error("Exception",e);
+		} finally {
+			if(bw!=null) bw.close();
+			if(writerStream!=null) writerStream.close();
+			if(reader!=null) reader.close();
+			if(is!=null) is.close();
+		}
+		return null;
+	}
+	
+	public static String[] requestPageByGetReLink(String urlStr, String outputFile) throws IOException {
+		LOG.info("Start to get api:" + urlStr);
+		InputStream is = null;
+		BufferedReader reader = null;
+		BufferedWriter bw = null;
+		FileOutputStream writerStream = null;
+		try {
+			URL url = new URL(urlStr);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+			conn.setDoInput(true);
+			conn.setDoOutput(true);
+			conn.setInstanceFollowRedirects(true);
+			conn.setRequestProperty("content-type", "text/html");
+			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
+
+			conn.connect();
+			if(conn.getResponseCode()!=200){
+				return null;
+			}
+			
+			is = conn.getInputStream();
+			String link = conn.getHeaderField("Link");
+
+			reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+			String s;
+			StringBuffer sb = new StringBuffer();
+			while ((s = reader.readLine()) != null) {
+				sb.append(s); 
+			}
+			
+			if(outputFile!=null && outputFile.length()>0) {
+				writerStream = new FileOutputStream(outputFile);    
+				bw = new BufferedWriter(new OutputStreamWriter(writerStream, "UTF-8"));
+				bw.write(sb.toString());
+				bw.flush();
+			}
+			
+			String reStrs[] = {sb.toString(), link};
+			
+			return reStrs;
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOG.error("Exception",e);
@@ -90,6 +150,7 @@ public class HtmlUtil {
 			conn.setRequestProperty("Charsert", "UTF-8");
 			conn.setInstanceFollowRedirects(true);
 			conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
+			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
 			conn.connect();
 
 			out = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "utf-8"));

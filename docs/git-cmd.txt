@@ -1,0 +1,5 @@
+git add *
+
+git commit -m "log message here"
+
+git push origin master

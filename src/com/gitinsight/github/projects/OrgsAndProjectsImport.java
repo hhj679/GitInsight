@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class OrgsAndProjectsImport {
@@ -36,11 +37,39 @@ public class OrgsAndProjectsImport {
 		
 		//导入项目信息
 //		importProjects("D:\\gitinsight\\doc\\orgs\\projects");
+		
+		String savePath = "E:\\opensource\\github\\data\\projects\\";
+		File pfiles = new File(savePath);
+		
+		File[] languageFiles = pfiles.listFiles();
+		for(File lFile:languageFiles) {
+			File[] jsonFiles = lFile.listFiles();
+			for(File jsonFile:jsonFiles) {
+				try {
+					List<String> lines = FileUtils.readLines(jsonFile);
+					JSONObject tjson = JSONObject.fromObject(lines.get(0));
+					JSONArray projects = tjson.getJSONArray("items");
+					for(int i=0; i<projects.size(); i++){
+						try{
+							JSONObject json = projects.getJSONObject(i);
+							importProject(json);
+						} catch(Exception e1) {
+							e1.printStackTrace();
+							LOG.error("Exception", e1);
+						}
+					}
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					LOG.error("Exception", e);
+				}
+			}
+		}
 	}
 	
 	public static void spiderOrgsInfo(File directfile, String savePath) {
 		try {
-			List<String> lines = FileUtils.readLines(directfile);
+			List<String> lines = FileUtils.readLines(directfile, "UTF-8");
 			for(String l:lines) {
 				String login = l.replace("https://github.com/", "");
 				HtmlUtil.requestPageByGet("https://api.github.com/orgs/" + login, savePath + File.separator + login);
@@ -211,6 +240,122 @@ public class OrgsAndProjectsImport {
 				LOG.error("Project's config file not found! Please git clone again!");
 			}
 		}
+	}
+	
+	public static void importProject(JSONObject json) {
+		String inertSQL = "insert into git_projects(git_id, name, full_name, owner_id, private, html_url, description, fork, url, git_url, ssh_url, clone_url, svn_url, homepage, created_at, updated_at, pushed_at, size, stargazers_count, watchers_count, language, has_issues, has_downloads, has_wiki, has_pages, forks_count, mirror_url, forks, open_issues, watchers, default_branch, network_count, subscribers_count)" 
+				+ " values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		
+		List<Map<Object, Integer>> insertParams = new ArrayList<Map<Object, Integer>>();
+		Map<Object, Integer> pmap1 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap2 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap3 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap4 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap5 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap6 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap7 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap8 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap9 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap10 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap11 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap12 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap13 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap14 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap15 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap16 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap17 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap18 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap19 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap20 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap21 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap22 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap23 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap24 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap25 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap26 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap27 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap28 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap29 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap30 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap31 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap32 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap33 = new HashMap<Object, Integer>();
+		Map<Object, Integer> pmap34 = new HashMap<Object, Integer>();
+		
+		pmap1.put(json.getInt("id"), DBUtil.P_STRING);
+		pmap2.put(json.getString("name"), DBUtil.P_STRING);
+		pmap3.put(json.getString("full_name"), DBUtil.P_STRING);
+		pmap4.put(json.getJSONObject("owner").get("id"), DBUtil.P_STRING);
+		pmap6.put((json.getBoolean("private")?1:0), DBUtil.P_INT);
+		pmap7.put(json.getString("html_url"), DBUtil.P_STRING);
+		pmap8.put(getString(json.getString("description")), DBUtil.P_STRING);
+		pmap9.put((json.getBoolean("fork")?1:0), DBUtil.P_INT);
+		pmap10.put(json.getString("url"), DBUtil.P_STRING);
+		pmap11.put(getString(json.getString("git_url")), DBUtil.P_STRING);
+		pmap12.put(getString(json.getString("ssh_url")), DBUtil.P_STRING);
+		pmap13.put(getString(json.getString("clone_url")), DBUtil.P_STRING);
+		pmap14.put(getString(json.getString("svn_url")), DBUtil.P_STRING);
+		pmap15.put(getString(json.getString("homepage")), DBUtil.P_STRING);
+		pmap16.put(json.getString("created_at"), DBUtil.P_STRING);
+		pmap17.put(json.getString("updated_at"), DBUtil.P_STRING);
+		pmap18.put(json.getString("pushed_at"), DBUtil.P_STRING);
+		pmap19.put(json.getInt("size"), DBUtil.P_INT);
+		pmap20.put(json.getInt("stargazers_count"), DBUtil.P_INT);
+		pmap21.put(json.getInt("watchers_count"), DBUtil.P_INT);
+		pmap22.put(json.getString("language"), DBUtil.P_STRING);
+		pmap23.put((json.getBoolean("has_issues")?1:0), DBUtil.P_INT);
+		pmap24.put((json.getBoolean("has_downloads")?1:0), DBUtil.P_INT);
+		pmap25.put((json.getBoolean("has_wiki")?1:0), DBUtil.P_INT);
+		pmap26.put((json.getBoolean("has_pages")?1:0), DBUtil.P_INT);
+		pmap27.put(json.getInt("forks_count"), DBUtil.P_INT);
+		pmap28.put(getString(json.getString("mirror_url")), DBUtil.P_STRING);
+		pmap29.put(json.getInt("forks"), DBUtil.P_INT);
+		pmap30.put(json.getInt("open_issues"), DBUtil.P_INT);
+		pmap31.put(json.getInt("watchers"), DBUtil.P_INT);
+		pmap32.put(json.getString("default_branch"), DBUtil.P_STRING);
+		pmap33.put(json.optInt("network_count"), DBUtil.P_INT);
+		pmap34.put(json.optInt("subscribers_count"), DBUtil.P_INT);
+		
+		insertParams.add(pmap1);
+		insertParams.add(pmap2);
+		insertParams.add(pmap3);
+		insertParams.add(pmap4);
+//		insertParams.add(pmap5);
+		insertParams.add(pmap6);
+		insertParams.add(pmap7);
+		insertParams.add(pmap8);
+		insertParams.add(pmap9);
+		insertParams.add(pmap10);
+		insertParams.add(pmap11);
+		insertParams.add(pmap12);
+		insertParams.add(pmap13);
+		insertParams.add(pmap14);
+		insertParams.add(pmap15);
+		insertParams.add(pmap16);
+		insertParams.add(pmap17);
+		insertParams.add(pmap18);
+		insertParams.add(pmap19);
+		insertParams.add(pmap20);
+		insertParams.add(pmap21);
+		insertParams.add(pmap22);
+		insertParams.add(pmap23);
+		insertParams.add(pmap24);
+		insertParams.add(pmap25);
+		insertParams.add(pmap26);
+		insertParams.add(pmap27);
+		insertParams.add(pmap28);
+		insertParams.add(pmap29);
+		insertParams.add(pmap30);
+		insertParams.add(pmap31);
+		insertParams.add(pmap32);
+		insertParams.add(pmap33);
+		insertParams.add(pmap34);
+		
+		
+		
+		DBUtil.insertTableData(inertSQL, insertParams);
+		
+		LOG.info("Create project :" + json.getString("full_name") + " success!");
 	}
 	
 	public static void importProjects(String directFilePath) {
