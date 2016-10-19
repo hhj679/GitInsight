@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -38,7 +39,7 @@ public class OrgsAndProjectsImport {
 		//导入项目信息
 //		importProjects("D:\\gitinsight\\doc\\orgs\\projects");
 		
-		String savePath = "E:\\opensource\\github\\data\\projects\\";
+		String savePath = "D:\\gitinsight\\github\\data\\projects\\json\\";
 		File pfiles = new File(savePath);
 		
 		File[] languageFiles = pfiles.listFiles();
@@ -53,6 +54,8 @@ public class OrgsAndProjectsImport {
 						try{
 							JSONObject json = projects.getJSONObject(i);
 							importProject(json);
+						} catch(MySQLIntegrityConstraintViolationException e2){
+							LOG.debug("Duplicate entry!");
 						} catch(Exception e1) {
 							e1.printStackTrace();
 							LOG.error("Exception", e1);
@@ -242,7 +245,7 @@ public class OrgsAndProjectsImport {
 		}
 	}
 	
-	public static void importProject(JSONObject json) {
+	public static void importProject(JSONObject json) throws MySQLIntegrityConstraintViolationException {
 		String inertSQL = "insert into git_projects(git_id, name, full_name, owner_id, private, html_url, description, fork, url, git_url, ssh_url, clone_url, svn_url, homepage, created_at, updated_at, pushed_at, size, stargazers_count, watchers_count, language, has_issues, has_downloads, has_wiki, has_pages, forks_count, mirror_url, forks, open_issues, watchers, default_branch, network_count, subscribers_count)" 
 				+ " values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		
@@ -251,7 +254,7 @@ public class OrgsAndProjectsImport {
 		Map<Object, Integer> pmap2 = new HashMap<Object, Integer>();
 		Map<Object, Integer> pmap3 = new HashMap<Object, Integer>();
 		Map<Object, Integer> pmap4 = new HashMap<Object, Integer>();
-		Map<Object, Integer> pmap5 = new HashMap<Object, Integer>();
+//		Map<Object, Integer> pmap5 = new HashMap<Object, Integer>();
 		Map<Object, Integer> pmap6 = new HashMap<Object, Integer>();
 		Map<Object, Integer> pmap7 = new HashMap<Object, Integer>();
 		Map<Object, Integer> pmap8 = new HashMap<Object, Integer>();
@@ -288,7 +291,7 @@ public class OrgsAndProjectsImport {
 		pmap4.put(json.getJSONObject("owner").get("id"), DBUtil.P_STRING);
 		pmap6.put((json.getBoolean("private")?1:0), DBUtil.P_INT);
 		pmap7.put(json.getString("html_url"), DBUtil.P_STRING);
-		pmap8.put(getString(json.getString("description")), DBUtil.P_STRING);
+		pmap8.put(charString(getString(json.getString("description"))), DBUtil.P_STRING);
 		pmap9.put((json.getBoolean("fork")?1:0), DBUtil.P_INT);
 		pmap10.put(json.getString("url"), DBUtil.P_STRING);
 		pmap11.put(getString(json.getString("git_url")), DBUtil.P_STRING);
@@ -352,10 +355,24 @@ public class OrgsAndProjectsImport {
 		insertParams.add(pmap34);
 		
 		
-		
 		DBUtil.insertTableData(inertSQL, insertParams);
 		
-		LOG.info("Create project :" + json.getString("full_name") + " success!");
+		
+		LOG.debug("Create project :" + json.getString("full_name") + " success!");
+	}
+	
+	public static String charString(String str) {
+		if(str == null) {
+			return null;
+		}
+		char []chars = str.toCharArray();
+		StringBuffer strBuffer = new StringBuffer();
+		for(char c : chars) {
+			if(c < 50000){
+				strBuffer.append(c);
+			}
+		}
+		return strBuffer.toString();
 	}
 	
 	public static void importProjects(String directFilePath) {

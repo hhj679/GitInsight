@@ -28,29 +28,50 @@ public class HtmlUtil {
 	}
 
 	public static String requestPageByGet(String urlStr, String outputFile) throws IOException {
-		LOG.info("Start to get api:" + urlStr);
+		LOG.debug("Start to get api:" + urlStr);
 		InputStream is = null;
 		BufferedReader reader = null;
 		BufferedWriter bw = null;
 		FileOutputStream writerStream = null;
 		try {
-			URL url = new URL(urlStr);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			conn.setDoInput(true);
-			conn.setDoOutput(true);
-			conn.setInstanceFollowRedirects(true);
-			conn.setRequestProperty("content-type", "text/html");
-			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
-			
-			conn.connect();
-			if(conn.getResponseCode()!=200){
-				return "";
+			for(int k=0; k<3; k++){
+				try {
+					int code = -1;
+					URL url = new URL(urlStr);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					conn.setDoInput(true);
+					conn.setDoOutput(true);
+					conn.setConnectTimeout(30*1000);
+					conn.setInstanceFollowRedirects(true);
+					conn.setRequestProperty("content-type", "text/html");
+					conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
+					conn.connect();
+					
+					code = conn.getResponseCode();
+					
+					if(code!=200){
+						return "";
+					}
+					
+					is = conn.getInputStream();
+					
+					break;
+				} catch (Exception e) {
+					Thread.currentThread().sleep(3000);
+					if(k == 2) {
+						LOG.error("network connect fail!", e);
+						e.printStackTrace();
+						
+						return null;
+					}
+				} 
 			}
 			
-			is = conn.getInputStream();
-			conn.getHeaderField("Link");
-
+			if(is == null){
+				return null;
+			}
+			
 			reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 			String s;
 			StringBuffer sb = new StringBuffer();
@@ -79,29 +100,50 @@ public class HtmlUtil {
 	}
 	
 	public static String[] requestPageByGetReLink(String urlStr, String outputFile) throws IOException {
-		LOG.info("Start to get api:" + urlStr);
+		LOG.debug("Start to get api:" + urlStr);
 		InputStream is = null;
 		BufferedReader reader = null;
 		BufferedWriter bw = null;
 		FileOutputStream writerStream = null;
 		try {
-			URL url = new URL(urlStr);
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod("GET");
-			conn.setDoInput(true);
-			conn.setDoOutput(true);
-			conn.setInstanceFollowRedirects(true);
-			conn.setRequestProperty("content-type", "text/html");
-			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
-
-			conn.connect();
-			if(conn.getResponseCode()!=200){
+			String link = null;
+			for(int k=0; k<3; k++){
+				try {
+					int code = -1;
+					URL url = new URL(urlStr);
+					HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+					conn.setRequestMethod("GET");
+					conn.setDoInput(true);
+					conn.setDoOutput(true);
+					conn.setConnectTimeout(30*1000);
+					conn.setInstanceFollowRedirects(true);
+					conn.setRequestProperty("content-type", "text/html");
+					conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
+					conn.connect();
+					
+					code = conn.getResponseCode();
+					
+					if(code!=200){
+						return null;
+					}
+					
+					is = conn.getInputStream();
+					link = conn.getHeaderField("Link");
+					
+					break;
+				} catch (Exception e) {
+					Thread.currentThread().sleep(3000);
+					if(k == 2) {
+						LOG.error("network connect fail!", e);
+						e.printStackTrace();
+					}
+				} 
+			}
+			
+			if(is == null){
 				return null;
 			}
 			
-			is = conn.getInputStream();
-			String link = conn.getHeaderField("Link");
-
 			reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
 			String s;
 			StringBuffer sb = new StringBuffer();
@@ -151,7 +193,12 @@ public class HtmlUtil {
 			conn.setInstanceFollowRedirects(true);
 			conn.setRequestProperty("Content-Type","application/x-www-form-urlencoded"); 
 			conn.setRequestProperty("Accept", "application/vnd.github.v3.star+json");
-			conn.connect();
+			
+			try {
+				conn.connect();
+			} catch (Exception e) {
+				conn.connect();
+			} 
 
 			out = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "utf-8"));
 			out.write("data="+json);

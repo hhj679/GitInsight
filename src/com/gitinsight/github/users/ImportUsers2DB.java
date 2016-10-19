@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +50,90 @@ public class ImportUsers2DB {
 		createUserAndProjectLink("apache spark");
 		
 //		queryPorjectsAuthorAndImport("apache spark");
+	}
+	
+	public static void importUserStars2DB(String repoFUllName, String userJSONStr) {
+		JSONObject userObj = JSONObject.fromObject(userJSONStr);
+		
+		String sql = " insert into " + "project_stars" 
+				+ "(repo_full_name,user_id,starred_at)" 
+				+ "values(?,?,?) ";
+		
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		try{
+			conn = DBUtil.openConnection();
+
+			pstmt = conn.prepareStatement(sql);
+
+			//insert into table
+			pstmt.setString(1, repoFUllName);
+			pstmt.setInt(2, userObj.getJSONObject("user").getInt("id"));
+			pstmt.setTimestamp(3, Timestamp.valueOf(userObj.getString("starred_at")));
+
+			pstmt.executeUpdate();
+			LOG.info("insert user:" + userObj.optString("login") + " success! ");
+		} catch(Exception e3) {
+			e3.printStackTrace();
+		} finally {
+			DBUtil.closeStatement(pstmt);
+			DBUtil.closeConn(conn);
+		}
+	}
+	
+	public static void importUser2DB(JSONObject userObj) {
+		String sql = " insert into " + "users" 
+				+ "(login,git_id,avatar_url,gravatar_id,url,html_url,followers_url,following_url,gists_url,starred_url,subscriptions_url,organizations_url,repos_url,events_url,received_events_url,type,site_admin)" 
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		try{
+			conn = DBUtil.openConnection();
+			
+//					JSONObject userObj = JSONObject.fromObject(userJSONStr);
+					
+					pstmt = conn.prepareStatement(sql);
+					
+					//insert into table
+					pstmt.setString(1, userObj.optString("login"));
+					pstmt.setInt(2, userObj.optInt("id"));
+					pstmt.setString(3, BlankUtil.getString(userObj.optString("avatar_url")));
+					pstmt.setString(4, BlankUtil.getString(userObj.optString("gravatar_id")));
+					pstmt.setString(5, BlankUtil.getString(userObj.optString("url")));
+					pstmt.setString(6, BlankUtil.getString(userObj.optString("html_url")));
+					pstmt.setString(7, BlankUtil.getString(userObj.optString("followers_url")));
+					pstmt.setString(8, BlankUtil.getString(userObj.optString("following_url")));
+					pstmt.setString(9, BlankUtil.getString(userObj.optString("gists_url")));
+					pstmt.setString(10, BlankUtil.getString(userObj.optString("starred_url")));
+					pstmt.setString(11, BlankUtil.getString(userObj.optString("subscriptions_url")));
+					pstmt.setString(12, BlankUtil.getString(userObj.optString("organizations_url")));
+					pstmt.setString(13, BlankUtil.getString(userObj.optString("repos_url")));
+					pstmt.setString(14, BlankUtil.getString(userObj.optString("events_url")));
+					pstmt.setString(15, BlankUtil.getString(userObj.optString("received_events_url")));
+					pstmt.setString(16, userObj.optString("type"));
+					pstmt.setInt(17, userObj.optBoolean("site_admin")?1:0);
+//					pstmt.setString(18, userObj.optString("name"));
+//					pstmt.setString(19, BlankUtil.getString(userObj.optString("company")));
+//					pstmt.setString(20, BlankUtil.getString(userObj.optString("blog")));
+//					pstmt.setString(21, BlankUtil.getString(userObj.optString("location")));
+//					pstmt.setString(22, BlankUtil.getString(userObj.optString("email")));
+//					pstmt.setInt(23, userObj.optBoolean("hireable")?1:0);
+//					pstmt.setString(24, BlankUtil.getObject(userObj.get("bio")));
+//					pstmt.setInt(25, userObj.optInt("public_repos"));
+//					pstmt.setInt(26, userObj.optInt("public_gists"));
+//					pstmt.setInt(27, userObj.optInt("followers"));
+//					pstmt.setInt(28, userObj.optInt("following"));
+//					pstmt.setString(29, userObj.optString("created_at"));
+//					pstmt.setString(30, userObj.optString("updated_at"));
+					
+					pstmt.executeUpdate();
+					LOG.info("insert user:" + userObj.optString("login") + " success! ");
+		} catch(Exception e3) {
+			e3.printStackTrace();
+		} finally {
+			DBUtil.closeStatement(pstmt);
+			DBUtil.closeConn(conn);
+		}
 	}
 	
 	public static void requestPorjectsAuthorAndImport(String projectName) {
@@ -99,7 +184,6 @@ public class ImportUsers2DB {
 								
 								JSONObject userInfoJsonO = JSONObject.fromObject(usersJson);
 
-								
 								pstmt = conn.prepareStatement(sql);
 								
 								//insert into table

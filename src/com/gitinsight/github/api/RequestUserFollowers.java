@@ -7,20 +7,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
 
-public class RequestProjectStars {
-	public static Logger LOG = Logger.getLogger(RequestProjectStars.class);
+public class RequestUserFollowers {
+	public static Logger LOG = Logger.getLogger(RequestUserFollowers.class);
 	
-	private static ConcurrentLinkedQueue<String> REPOS_QUEUE = new ConcurrentLinkedQueue<String>();
+	private static ConcurrentLinkedQueue<String> USERS_QUEUE = new ConcurrentLinkedQueue<String>();
 	private static ConcurrentLinkedQueue<String> TOKEN_QUEUE = new ConcurrentLinkedQueue<String>();
 //	private static ConcurrentLinkedQueue<String> REPOS_QUEUE = new ConcurrentLinkedQueue<String>();
 	
-	public RequestProjectStars() {
+	public RequestUserFollowers() {
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -40,10 +39,10 @@ public class RequestProjectStars {
 		for(Map<String, Object> rsMap : rsList){
 			reposList.add((String) rsMap.get("full_name"));
 			
-			REPOS_QUEUE.offer((String) rsMap.get("full_name"));
+			USERS_QUEUE.offer((String) rsMap.get("full_name"));
 		}
 		
-		LOG.info("Queue size:" + REPOS_QUEUE.size());
+		LOG.info("Queue size:" + USERS_QUEUE.size());
 		
 		TOKEN_QUEUE.offer("a1bfbc6b34002b8b39a1896cc27c02b72774068d");
 		TOKEN_QUEUE.offer("c36cb7bb1659efbb8e4a37fd73ce56b7b70405e5");
@@ -62,70 +61,39 @@ public class RequestProjectStars {
 //		request(reposList);
 		
 		for(int i=0; i< 5 ; i ++) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			new CrawlThread("Thread_" + i).start();
+			new CrawlThread().start();
 		}
 	}
 	
 	public static void request() {
-		String savePath = "E:\\opensource\\github\\data\\stars\\";
+		String savePath = "E:\\opensource\\github\\data\\followers\\";
 		String[] tokens = {TOKEN_QUEUE.poll(), TOKEN_QUEUE.poll()};
-
-		int tempNum = 0;
-		while(!REPOS_QUEUE.isEmpty()) {
+		while(!USERS_QUEUE.isEmpty()) {
 			try {
-				String repo = REPOS_QUEUE.poll();
+				String user_login = USERS_QUEUE.poll();
 				
-				String saveFilePath = repo.replace("/", "_qqq;;;_");
-				File saveFile = new File(savePath + saveFilePath);
+				File saveFile = new File(savePath);
 				if(!saveFile.exists()) {
 					saveFile.mkdirs();
-				} else {
-					continue;
-				}
-				
-				tempNum ++;
-				
-				if(tempNum%100 == 0 && tempNum != 0) {
-					LOG.info("I still live! Have a rest!");
-					Thread.currentThread().sleep(30*1000);
 				}
 				
 				int fileNo = 2;
 				
-				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + getToken(tokens), 
-						savePath + saveFilePath + "\\" + saveFilePath + "stars_1" + ".json");
+				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/users/" + user_login + "/followers?page=1&per_page=100&access_token=" + getToken(tokens), 
+						savePath + user_login + "followers_1" + ".json");
 				
+				String link = reInfo[1];
 				
 				int lastPage = 1;
 				
 				if(reInfo!=null && reInfo[1] != null) {
-					String link = reInfo[1];
 					lastPage = Integer.valueOf(getLastPageByLink(link));
-					
-					FileUtils.writeStringToFile(new File(savePath + saveFilePath + "\\pages.txt"), String.valueOf(lastPage));
-					
-				} else {
-					FileUtils.writeStringToFile(new File(savePath + saveFilePath + "\\pages.txt"), "1");
 				}
-				
-				File checkFile = new File(savePath + saveFilePath);
-				if(checkFile.list().length == 1) {
-					checkFile.delete();
-					REPOS_QUEUE.add(repo);
-					LOG.error("connect 3 tims still fail. The url is:" + "https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + getToken(tokens));;
-				}
-				
 
 				for(int i=2; i<=lastPage; i++){
-					Thread.sleep(1400);
-					HtmlUtil.requestPageByGet("https://api.github.com/repos/" + repo + "/stargazers?page=" + i +"&per_page=100&access_token=" + getToken(tokens), 
-							savePath + saveFilePath + "\\" + saveFilePath + "stars_" + (fileNo++) + ".json");
+					HtmlUtil.requestPageByGet("https://api.github.com/users/" + user_login + "/followers?page=" + i +"&per_page=100&access_token=" + getToken(tokens), 
+							savePath + user_login + "followers_" + (fileNo++) + ".json");
+					Thread.sleep(1000);
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -255,15 +223,9 @@ public class RequestProjectStars {
 	}
 	
 	static class CrawlThread extends Thread {
-		public CrawlThread(){
-		}
-		
-		public CrawlThread(String name){
-			this.currentThread().setName(name);
-		}
 		   // 第二个线程入口
 		   public void run() {
-			   RequestProjectStars.request();
+			   RequestUserFollowers.request();
 		   }
 		}
 }
