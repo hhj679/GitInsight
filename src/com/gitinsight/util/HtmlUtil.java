@@ -28,7 +28,7 @@ public class HtmlUtil {
 	}
 
 	public static String requestPageByGet(String urlStr, String outputFile) throws IOException {
-		LOG.debug("Start to get api:" + urlStr);
+		LOG.info("Start to get api:" + urlStr);
 		InputStream is = null;
 		BufferedReader reader = null;
 		BufferedWriter bw = null;
@@ -100,7 +100,7 @@ public class HtmlUtil {
 	}
 	
 	public static String[] requestPageByGetReLink(String urlStr, String outputFile) throws IOException {
-		LOG.debug("Start to get api:" + urlStr);
+		LOG.info("Start to get api:" + urlStr);
 		InputStream is = null;
 		BufferedReader reader = null;
 		BufferedWriter bw = null;

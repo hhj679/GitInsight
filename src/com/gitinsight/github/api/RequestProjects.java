@@ -2,6 +2,7 @@ package com.gitinsight.github.api;
 
 import java.io.File;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import net.sf.json.JSONObject;
@@ -38,6 +39,7 @@ public class RequestProjects {
 				JSONObject jsonObj = JSONObject.fromObject(repoJson);
 				int total = jsonObj.getInt("total_count");
 				int totalPage = total/100 + 1;
+				FileUtils.writeStringToFile(new File(savePath + language + File.separator + "pages.txt"), String.valueOf(totalPage));
 				if(totalPage > 10) {
 					totalPage = 10;
 				}
@@ -77,7 +79,7 @@ public class RequestProjects {
 						if(page == 10) {
 							jsonObj = JSONObject.fromObject(repoJson);
 							
-							JSONObject lastItem = (JSONObject) jsonObj.getJSONArray("items").get(jsonObj.getJSONArray("items").size());
+							JSONObject lastItem = (JSONObject) jsonObj.getJSONArray("items").get(jsonObj.getJSONArray("items").size()-1);
 							stars = lastItem.getInt("stargazers_count");
 						}
 						

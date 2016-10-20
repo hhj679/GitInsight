@@ -257,13 +257,13 @@ public class RequestProjectStars {
 	static class CrawlThread extends Thread {
 		public CrawlThread(){
 		}
-		
+
 		public CrawlThread(String name){
 			this.currentThread().setName(name);
 		}
-		   // 第二个线程入口
-		   public void run() {
-			   RequestProjectStars.request();
-		   }
+		// 第二个线程入口
+		public void run() {
+			RequestProjectStars.request();
 		}
+	}
 }

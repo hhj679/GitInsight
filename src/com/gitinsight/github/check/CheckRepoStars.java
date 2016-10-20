@@ -2,6 +2,10 @@ package com.gitinsight.github.check;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
 
@@ -11,9 +15,13 @@ public class CheckRepoStars {
 		// TODO Auto-generated constructor stub
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ParseException {
 		// TODO Auto-generated method stub
+		String s = "2016-02-17T19:27:26Z";
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		Date d = formatter.parse(s);
 
+		System.out.println("Formatted Date in current time zone = " + formatter.format(d));
 	}
 	
 	public static void check(String filePath) {
@@ -30,6 +38,8 @@ public class CheckRepoStars {
 							File jsonFile = new File(sf.getPath() + File.separator + sf.getName() + "stars_" + p + ".json");
 							if(!jsonFile.exists()){
 								System.out.println("error at: " + jsonFile.getName());
+								FileUtils.writeStringToFile(new File("E:\\opensource\\github\\data\\stars\\error.txt"), sf.getName().replace("_qqq;;;_", "/") + "\r\n", true);
+								break;
 							}
 						}
 					}

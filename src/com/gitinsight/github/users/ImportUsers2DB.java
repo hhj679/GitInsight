@@ -1,27 +1,33 @@
 package com.gitinsight.github.users;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.gitinsight.github.api.RequestDataByAPI;
 import com.gitinsight.util.BlankUtil;
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 public class ImportUsers2DB {
 	public static Logger LOG = Logger.getLogger(ImportUsers2DB.class);
@@ -33,6 +39,8 @@ public class ImportUsers2DB {
 	private static String USERS_API_URL = "https://api.github.com/users/";
 	
 	private static String MYSQL_USER_SOURCE_TABLE_NAME = "users_source";
+	
+	private static ConcurrentLinkedQueue<String> STARS_QUEUE = new ConcurrentLinkedQueue<String>();
 	
 	//final private static long SLEEP_TIME = 2000;
 	
@@ -47,13 +55,64 @@ public class ImportUsers2DB {
 //			System.out.println((++i) + "==>" + e.getKey() + ":" + e.getValue());
 //		}
 		
-		createUserAndProjectLink("apache spark");
+//		createUserAndProjectLink("apache spark");
 		
 //		queryPorjectsAuthorAndImport("apache spark");
+		
+		
+		
+		String path = "E:\\opensource\\github\\data\\stars\\";
+		File pf = new File(path);
+		for(File sf : pf.listFiles()){
+			for(String jsonFile : sf.list()){
+				if(!jsonFile.endsWith(".txt")){
+					STARS_QUEUE.offer(sf.getPath() + File.separator + jsonFile);
+				}
+			}
+		}
+		
+		LOG.info("STARS_QUEUE size: " + STARS_QUEUE.size());
+		
+		for(int i=0; i<1; i++) {
+			new CrawlThread().start();
+		}
 	}
 	
-	public static void importUserStars2DB(String repoFUllName, String userJSONStr) {
-		JSONObject userObj = JSONObject.fromObject(userJSONStr);
+	static class CrawlThread extends Thread {
+		public CrawlThread(){
+		}
+
+		public CrawlThread(String name){
+			this.currentThread().setName(name);
+		}
+		// 第二个线程入口
+		public void run() {
+			ImportUsers2DB.importUserStars2DB();
+		}
+	}
+	
+	public static void importUserStars2DB() {
+		while(!STARS_QUEUE.isEmpty()){
+			try {
+				String filePath = STARS_QUEUE.poll();
+				File starJsonFile = new File(filePath);
+				String starsStr = FileUtils.readFileToString(starJsonFile);
+				JSONArray starsArray = JSONArray.fromObject(starsStr);
+				String repoFUllName = starJsonFile.getName().replace("_qqq;;;_", "/");
+				repoFUllName = repoFUllName.substring(0, repoFUllName.indexOf("stars_")-1);
+				for(int i=0; i<starsArray.size(); i++) {
+					JSONObject starsObject = starsArray.getJSONObject(i);
+					importUserStars2DB(repoFUllName, starsObject);
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+				LOG.error("import user stars error:", e);
+			}
+		}
+	}
+	
+	public static void importUserStars2DB(String repoFUllName, JSONObject userObj ) {
+//		JSONObject userObj = JSONObject.fromObject(userJSONStr);
 		
 		String sql = " insert into " + "project_stars" 
 				+ "(repo_full_name,user_id,starred_at)" 
@@ -69,10 +128,12 @@ public class ImportUsers2DB {
 			//insert into table
 			pstmt.setString(1, repoFUllName);
 			pstmt.setInt(2, userObj.getJSONObject("user").getInt("id"));
-			pstmt.setTimestamp(3, Timestamp.valueOf(userObj.getString("starred_at")));
+			DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+			Date d = formatter.parse(userObj.getString("starred_at"));
+			pstmt.setTimestamp(3, new Timestamp(d.getTime()));
 
 			pstmt.executeUpdate();
-			LOG.info("insert user:" + userObj.optString("login") + " success! ");
+			LOG.info("insert user:" + userObj.getJSONObject("user").optString("login") + " success! ");
 		} catch(Exception e3) {
 			e3.printStackTrace();
 		} finally {
