@@ -39,7 +39,7 @@ public class OrgsAndProjectsImport {
 		//导入项目信息
 //		importProjects("D:\\gitinsight\\doc\\orgs\\projects");
 		
-		String savePath = "D:\\gitinsight\\github\\data\\projects\\json\\";
+		String savePath = "E:\\gitinsight\\data\\repos\\";
 		File pfiles = new File(savePath);
 		
 		File[] languageFiles = pfiles.listFiles();

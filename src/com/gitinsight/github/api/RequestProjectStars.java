@@ -31,37 +31,69 @@ public class RequestProjectStars {
 //		String languages[] = {"Java", "JavaScript", "CSS", "HTML", "Objective-C", "PHP", "Python", "Ruby", 
 //				"Scala", "Go", "R", "Swift", "C", "C++", "C#"};
 		
-		String sql = "SELECT distinct p.full_name FROM insightdb.git_projects p";
-		String[] reColsName = {"full_name"};
-		List<Map<String, Object>> rsList = DBUtil.getTableData(sql, null, reColsName);
-		List<String> reposList = new ArrayList<String>();
-		LOG.info("request size:" + rsList.size());
+//		String sql = "SELECT distinct p.full_name FROM insightdb.git_projects p";
+//		String[] reColsName = {"full_name"};
+//		List<Map<String, Object>> rsList = DBUtil.getTableData(sql, null, reColsName);
+//		List<String> reposList = new ArrayList<String>();
+//		LOG.info("request size:" + rsList.size());
+//		
+//		for(Map<String, Object> rsMap : rsList){
+//			reposList.add((String) rsMap.get("full_name"));
+//			
+//			REPOS_QUEUE.offer((String) rsMap.get("full_name"));
+//		}
 		
-		for(Map<String, Object> rsMap : rsList){
-			reposList.add((String) rsMap.get("full_name"));
-			
-			REPOS_QUEUE.offer((String) rsMap.get("full_name"));
-		}
+		REPOS_QUEUE.addAll(FileUtils.readLines(new File("E:\\gitinsight\\data\\stars_error1.txt")));
 		
 		LOG.info("Queue size:" + REPOS_QUEUE.size());
 		
-		TOKEN_QUEUE.offer("a1bfbc6b34002b8b39a1896cc27c02b72774068d");
-		TOKEN_QUEUE.offer("c36cb7bb1659efbb8e4a37fd73ce56b7b70405e5");
-		TOKEN_QUEUE.offer("081e6094e50cf752b20a5eeeea88e2ff827669b1");
-		TOKEN_QUEUE.offer("f54d408b200223ba6da017e0af49bb1c1956dae4");
-		TOKEN_QUEUE.offer("d745cbff4026cea4d5eb680149b53c5c9cf75c76");
-		TOKEN_QUEUE.offer("0c290ec746a452ab1c6ef348ebaab800aefde657");
-		TOKEN_QUEUE.offer("dc6c5c6cdbb89f70b2fe1f0d9c114d8bd4ebbc73");
-		TOKEN_QUEUE.offer("c491e3cad47b26731879e36bf9beaf0f1b4150cf");
-		TOKEN_QUEUE.offer("6fca610d9d57a1a43083f2f85db7eaa8b7ec4db3");
-		TOKEN_QUEUE.offer("14950d17b2a9b586a09874662a3526fb0b684615");
+		
+		//thx021
+//		TOKEN_QUEUE.offer("04bb9a7506ab600ce53e5f004c2d35bb7f41dfd0");
+//		TOKEN_QUEUE.offer("f9643d19c67b58e5d5a7e41b9cac64279026a378");
+//		TOKEN_QUEUE.offer("eb866b4f06bbf84fbbd047a978442564d829f3b3");
+//		TOKEN_QUEUE.offer("123ccc118eb3dabe80b5b5c087a572d063a3631f");
+//		TOKEN_QUEUE.offer("40f99141c73394888e36fc9278754a1786ea7e5e");
+//		TOKEN_QUEUE.offer("f4779b386cf87e0f14846f3274429238cfba6780");
+//		TOKEN_QUEUE.offer("a2dad91ea6f17619ebf54cc769b7c674492a28d0");
+//		TOKEN_QUEUE.offer("94986b525450dd61dbc32d65786d4eaca5631dc3");
+//		TOKEN_QUEUE.offer("5ac6ac3937132ff2d42e1775c0fabd77548beceb");
+//		TOKEN_QUEUE.offer("77830f0cd45e277add570ac200ff6ddde55cf2c2");
+		
+		//hhj679
+//		TOKEN_QUEUE.offer("abc57c2a8ac4ede2fb1551dcf699257fa6dad13c");
+//		TOKEN_QUEUE.offer("bf5d4c34c678a61b49765201be1b20b9e1771c85");
+//		TOKEN_QUEUE.offer("ab41fb6c942eb2bf9b656a5489f45be46d8310c1");
+//		TOKEN_QUEUE.offer("856c840c7cd6384b9f5a472b998b12e973e485c0");
+//		TOKEN_QUEUE.offer("9f47cb99cd0d76e606f2971a053b01ffa25ebbf1");
+//		TOKEN_QUEUE.offer("35a677c768577aa0de897fa96f1c0c22467c8133");
+//		TOKEN_QUEUE.offer("9e507f59f9099eec8ed2bdb6aef83f8d1465bff8");
+//		TOKEN_QUEUE.offer("b7610495b3efe8686bf06fe13478935fe16259b8");
+//		TOKEN_QUEUE.offer("30adf01002b46824a9015b0c96be751c52b7ee42");
+//		TOKEN_QUEUE.offer("e8b088384362fc43cd67da009f17111dc793f3ec");
+		
+		
+		TOKEN_QUEUE.offer("abc57c2a8ac4ede2fb1551dcf699257fa6dad13c");
+		TOKEN_QUEUE.offer("04bb9a7506ab600ce53e5f004c2d35bb7f41dfd0");
+		TOKEN_QUEUE.offer("f81ef6ec593ca3cea7b2cbddc72cc1d03f47e535");
+		
+		TOKEN_QUEUE.offer("6d12e500f661490fbe978100dfbd7ede32648f14");
+		TOKEN_QUEUE.offer("cf8ee7d276e027ffe96808403881c6ceb5e7d104");
+		TOKEN_QUEUE.offer("1975c6cc602fa5e422a4eeea739a96538c0f4725");
+		
+		TOKEN_QUEUE.offer("00737e62d82bf610f0b515189d43e09b8282ef47");
+		TOKEN_QUEUE.offer("ede65a8a32b24acbb4d134f25c44c8c5a0a5cf4c");
+		TOKEN_QUEUE.offer("b41e59078a547a53fd12eb1d3ff377218364101a");
+		
+		TOKEN_QUEUE.offer("b50b4fabe5930370a726a8a8b5b3bd17ca2de368");
+		
 		
 //		reposList.add("0x00A/paramify");
 //		reposList.add("0x00A/Porter");
 		
 //		request(reposList);
 		
-		for(int i=0; i< 5 ; i ++) {
+		for(int i=0; i< 10 ; i ++) {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
@@ -73,19 +105,21 @@ public class RequestProjectStars {
 	}
 	
 	public static void request() {
-		String savePath = "E:\\opensource\\github\\data\\stars\\";
-		String[] tokens = {TOKEN_QUEUE.poll(), TOKEN_QUEUE.poll()};
-
+		String savePath = "E:\\gitinsight\\data\\stars\\";
+		//String[] tokens = {TOKEN_QUEUE.poll(), TOKEN_QUEUE.poll()};
+		String token = TOKEN_QUEUE.poll();
 		int tempNum = 0;
 		while(!REPOS_QUEUE.isEmpty()) {
 			try {
+				Thread.sleep(800);
 				String repo = REPOS_QUEUE.poll();
 				
 				String saveFilePath = repo.replace("/", "_qqq;;;_");
 				File saveFile = new File(savePath + saveFilePath);
 				if(!saveFile.exists()) {
 					saveFile.mkdirs();
-				} else {
+				} 
+				else {
 					continue;
 				}
 				
@@ -93,12 +127,12 @@ public class RequestProjectStars {
 				
 				if(tempNum%100 == 0 && tempNum != 0) {
 					LOG.info("I still live! Have a rest!");
-					Thread.currentThread().sleep(30*1000);
+					Thread.sleep(30*1000);
 				}
 				
 				int fileNo = 2;
 				
-				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + getToken(tokens), 
+				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + token,//getToken(tokens), 
 						savePath + saveFilePath + "\\" + saveFilePath + "stars_1" + ".json");
 				
 				
@@ -118,13 +152,13 @@ public class RequestProjectStars {
 				if(checkFile.list().length == 1) {
 					checkFile.delete();
 					REPOS_QUEUE.add(repo);
-					LOG.error("connect 3 tims still fail. The url is:" + "https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + getToken(tokens));;
+					LOG.error("connect 3 tims still fail. The url is:" + "https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + token);//getToken(tokens));
 				}
 				
 
 				for(int i=2; i<=lastPage; i++){
-					Thread.sleep(1400);
-					HtmlUtil.requestPageByGet("https://api.github.com/repos/" + repo + "/stargazers?page=" + i +"&per_page=100&access_token=" + getToken(tokens), 
+					Thread.sleep(800);
+					HtmlUtil.requestPageByGet("https://api.github.com/repos/" + repo + "/stargazers?page=" + i +"&per_page=100&access_token=" + token,//getToken(tokens), 
 							savePath + saveFilePath + "\\" + saveFilePath + "stars_" + (fileNo++) + ".json");
 				}
 			} catch (Exception e) {
@@ -257,13 +291,13 @@ public class RequestProjectStars {
 	static class CrawlThread extends Thread {
 		public CrawlThread(){
 		}
-
+		
 		public CrawlThread(String name){
 			this.currentThread().setName(name);
 		}
-		// 第二个线程入口
-		public void run() {
-			RequestProjectStars.request();
+		   // ç¬¬äºŒä¸ªçº¿ç¨‹å…¥å�£
+		   public void run() {
+			   RequestProjectStars.request();
+		   }
 		}
-	}
 }

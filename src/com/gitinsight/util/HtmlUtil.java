@@ -20,11 +20,14 @@ public class HtmlUtil {
 	public static Logger LOG = Logger.getLogger(HtmlUtil.class);
 	/**
 	 * @param args
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-		Date d = new Date(1437069661);
+		Date d = new Date(1476983597);
 		System.out.println(d);
+		
+		requestPageByGet("https://api.github.com/repos/docker/docker/stargazers?page=1&per_page=100&access_token=04bb9a7506ab600ce53e5f004c2d35bb7f41dfd0", null);
 	}
 
 	public static String requestPageByGet(String urlStr, String outputFile) throws IOException {
