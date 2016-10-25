@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -61,28 +62,28 @@ public class ImportUsers2DB {
 		
 		
 		
-		String path = "E:\\opensource\\github\\data\\stars\\";
+		String path = "E:\\gitinsight\\data\\stars\\";
 		File pf = new File(path);
 		for(File sf : pf.listFiles()){
 			for(String jsonFile : sf.list()){
 				if(!jsonFile.endsWith(".txt")){
-					STARS_QUEUE.offer(sf.getPath() + File.separator + jsonFile);
+					STARS_QUEUE.add(sf.getPath() + File.separator + jsonFile);
 				}
 			}
 		}
 		
 		LOG.info("STARS_QUEUE size: " + STARS_QUEUE.size());
 		
-		for(int i=0; i<1; i++) {
-			new CrawlThread().start();
+		for(int i=0; i<2; i++) {
+			new InsertDBThread().start();
 		}
 	}
 	
-	static class CrawlThread extends Thread {
-		public CrawlThread(){
+	static class InsertDBThread extends Thread {
+		public InsertDBThread(){
 		}
 
-		public CrawlThread(String name){
+		public InsertDBThread(String name){
 			this.currentThread().setName(name);
 		}
 		// 第二个线程入口
@@ -92,26 +93,146 @@ public class ImportUsers2DB {
 	}
 	
 	public static void importUserStars2DB() {
-		while(!STARS_QUEUE.isEmpty()){
-			try {
-				String filePath = STARS_QUEUE.poll();
-				File starJsonFile = new File(filePath);
-				String starsStr = FileUtils.readFileToString(starJsonFile);
-				JSONArray starsArray = JSONArray.fromObject(starsStr);
-				String repoFUllName = starJsonFile.getName().replace("_qqq;;;_", "/");
-				repoFUllName = repoFUllName.substring(0, repoFUllName.indexOf("stars_")-1);
-				for(int i=0; i<starsArray.size(); i++) {
-					JSONObject starsObject = starsArray.getJSONObject(i);
-					importUserStars2DB(repoFUllName, starsObject);
+//		Connection conn = null;
+		try {
+//			conn = DBUtil.openConnection();
+			List<Map<String, JSONObject>> list = new ArrayList<Map<String, JSONObject>>();
+			while(!STARS_QUEUE.isEmpty()){
+				try {
+//					LOG.info("STARS_QUEUE size:" + STARS_QUEUE.size());
+					String filePath = STARS_QUEUE.poll();
+					File starJsonFile = new File(filePath);
+					String starsStr = FileUtils.readFileToString(starJsonFile);
+					JSONArray starsArray = JSONArray.fromObject(starsStr);
+					String repoFullName = starJsonFile.getName().replace("_qqq;;;_", "/");
+					repoFullName = repoFullName.substring(0, repoFullName.indexOf("stars_"));
+					for(int i=0; i<starsArray.size(); i++) {
+						JSONObject starsObject = starsArray.getJSONObject(i);
+						
+//						if(!isExistInDB(repoFullName, starsObject, conn)){
+//							importUserStars2DB(repoFullName, starsObject);
+						Map<String, JSONObject> batchData = new Hashtable<String, JSONObject>();
+						batchData.put(repoFullName, starsObject);
+						list.add(batchData);
+//						}
+					}
+					
+					if(list.size()>=10000){
+						importUserStars2DBBatch(list);
+						list.clear();
+						
+						starsArray = null;
+						starsStr = null;
+						starJsonFile = null;
+						
+						LOG.info("Commit finish! STARS_QUEUE's size:" + STARS_QUEUE.size());
+					}
+				} catch(Exception e) {
+					e.printStackTrace();
+					LOG.error("import user stars error:", e);
 				}
-			} catch(Exception e) {
-				e.printStackTrace();
-				LOG.error("import user stars error:", e);
 			}
+		} catch(Exception e){
+			e.printStackTrace();
+		} finally {
+//			DBUtil.closeConn(conn);
 		}
 	}
 	
-	public static void importUserStars2DB(String repoFUllName, JSONObject userObj ) {
+	public static boolean isExistInDB(String repoFullName, JSONObject starsObject, Connection conn) {
+		int count = 0;
+		
+		ResultSet rs = null;
+		PreparedStatement pstmt = null;
+		try {
+			String querySql = "select count(id) from project_stars where repo_full_name='" 
+					+ repoFullName + "' and user_id='" + starsObject.getJSONObject("user").getString("login") + "'";
+			pstmt = conn.prepareStatement(querySql);
+//			pstmt.setString(1, project);
+			rs = pstmt.executeQuery(querySql);
+			if (rs.next()) {
+				count = rs.getInt(1);
+			}
+			LOG.debug("login:" + repoFullName + "'s count in table users_source is" + count);
+			rs.close();
+			pstmt.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			DBUtil.closeResultSet(rs);
+			DBUtil.closeStatement(pstmt);
+		}
+		
+		return count>0?true:false;//sort
+	}
+	
+	public static void importUserStars2DBBatch(List<Map<String, JSONObject>> list) {
+//		JSONObject userObj = JSONObject.fromObject(userJSONStr);
+		
+		String sql = " insert into " + "project_stars" 
+				+ "(repo_full_name,user_id,starred_at)" 
+				+ "values(?,?,?) ";
+		
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		try{
+			conn = DBUtil.openConnection();
+			conn.setAutoCommit(false);
+			pstmt = conn.prepareStatement(sql);
+
+			//insert into table
+//			String fullName = dataMap.keySet().iterator().next();
+			for(Map<String, JSONObject> map : list){
+				String fullName = map.keySet().iterator().next();
+				JSONObject userObj = map.get(fullName);
+				pstmt.setString(1, fullName);
+				pstmt.setString(2, userObj.getJSONObject("user").getString("login"));
+				DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+				Date d = formatter.parse(userObj.getString("starred_at"));
+				pstmt.setTimestamp(3, new Timestamp(d.getTime()));
+				pstmt.addBatch();
+			}
+
+			pstmt.executeBatch();
+			conn.commit();
+		} catch(Exception e3) {
+			e3.printStackTrace();
+		} finally {
+			DBUtil.closeStatement(pstmt);
+			DBUtil.closeConn(conn);
+		}
+	}
+	
+	public static void importUserStars2DB(String repoFullName, JSONObject userObj, Connection conn ) throws Exception {
+//		JSONObject userObj = JSONObject.fromObject(userJSONStr);
+		
+		String sql = " insert into " + "project_stars" 
+				+ "(repo_full_name,user_id,starred_at)" 
+				+ "values(?,?,?) ";
+		
+		PreparedStatement pstmt = null;
+		try{
+			conn = DBUtil.openConnection();
+
+			pstmt = conn.prepareStatement(sql);
+
+			//insert into table
+			pstmt.setString(1, repoFullName);
+			pstmt.setString(2, userObj.getJSONObject("user").getString("login"));
+			DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+			Date d = formatter.parse(userObj.getString("starred_at"));
+			pstmt.setTimestamp(3, new Timestamp(d.getTime()));
+
+			pstmt.executeUpdate();
+			LOG.info("insert user:" + userObj.getJSONObject("user").optString("login") + " success! ");
+		} catch(Exception e3) {
+			throw(e3);
+		} finally {
+			DBUtil.closeStatement(pstmt);
+		}
+	}
+	
+	public static void importUserStars2DB(String repoFullName, JSONObject userObj ) {
 //		JSONObject userObj = JSONObject.fromObject(userJSONStr);
 		
 		String sql = " insert into " + "project_stars" 
@@ -126,8 +247,8 @@ public class ImportUsers2DB {
 			pstmt = conn.prepareStatement(sql);
 
 			//insert into table
-			pstmt.setString(1, repoFUllName);
-			pstmt.setInt(2, userObj.getJSONObject("user").getInt("id"));
+			pstmt.setString(1, repoFullName);
+			pstmt.setString(2, userObj.getJSONObject("user").getString("login"));
 			DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 			Date d = formatter.parse(userObj.getString("starred_at"));
 			pstmt.setTimestamp(3, new Timestamp(d.getTime()));
