@@ -131,3 +131,25 @@ CREATE TABLE `git_projects` (
   UNIQUE KEY `id_UNIQUE` (`id`),
   UNIQUE KEY `git_id_UNIQUE` (`git_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=68182 DEFAULT CHARSET=utf8;
+
+
+#select * FROM insightdb.project_stars1;
+
+
+#select repo_full_name, DATE_FORMAT(starred_at, '%Y-%m') as monthly, count(user_login) 
+#from project_stars1 where repo_full_name='00-Evan/shattered-pixel-dungeon' group by monthly, repo_full_name 
+#order by monthly
+
+
+#min:362075  count:32492304
+#create table project_stars2 as select * from project_stars where id>5000000 and  id <= 10000000
+#create table project_stars3 as select * from project_stars where id>10000000 and  id <= 15000000
+#create table project_stars4 as select * from project_stars where id>15000000 and  id <= 20000000
+
+create table project_stars5 as select * from project_stars where id>20000000 and  id <= 25000000;
+create table project_stars6 as select * from project_stars where id>25000000 and  id <= 30000000;
+create table project_stars7 as select * from project_stars where id>30000000 ;
+
+#create table project_stars_all like project_stars1;
+
+#alter table users engine=merge union=(project_stars1,project_stars2,project_stars3,project_stars4,project_stars5,project_stars6,project_stars7) insert_method=last;

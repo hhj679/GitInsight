@@ -1,5 +1,8 @@
 https://api.github.com/search/repositories?q=stars%3A%3E100+language%3Ajavascript&sort=stars&order=desc&page=2&per_page=100
 
+https://api.github.com/search/users?q=followers:%3E=50+type:user+created:%3C2008-08&per_page=100
+
+https://api.github.com/search/users?q=followers:%3E=500+type:user+created:%222008-02-01+..+2008-03-01%22&per_page=100&sort=joined
 
 //hhj679
 abc57c2a8ac4ede2fb1551dcf699257fa6dad13c
@@ -16,3 +19,18 @@ e8b088384362fc43cd67da009f17111dc793f3ec
 
 //huhx001
 f53ce4659ebc3f48824836680e9aa921abfb188c
+
+
+mattetti
+
+pjhyett
+
+https://api.github.com/search/users?q=followers:%3E=50+type:user+created:%3C2008-01&per_page=100&sort=joined
+3
+https://api.github.com/search/users?q=followers:%3E=50+type:user+created:%222008-01-01+..+2008-02-01%22&per_page=100&sort=joined
+52
+https://api.github.com/search/users?q=followers:%3E=50+type:user+created:%222008-02-01+..+2008-02-29%22&per_page=100&sort=joined
+457
+
+https://api.github.com/search/users?q=followers:%3E=50+type:user+created:%3C=2008-02&per_page=100&sort=joined
+512
