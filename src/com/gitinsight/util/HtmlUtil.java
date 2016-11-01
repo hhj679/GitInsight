@@ -11,8 +11,10 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -20,14 +22,19 @@ public class HtmlUtil {
 	public static Logger LOG = Logger.getLogger(HtmlUtil.class);
 	/**
 	 * @param args
-	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		Date d = new Date(1476983597);
-		System.out.println(d);
+//		Date d = new Date(1437069661);
+//		System.out.println(d);
+		Set<String> set = new HashSet<String> ();
+		for(int i=0; i<32492304; i++){
+//			System.out.println("page:" + i);
+			set.add("ImportUsers2DB" + i);
+		}
 		
-		requestPageByGet("https://api.github.com/repos/docker/docker/stargazers?page=1&per_page=100&access_token=04bb9a7506ab600ce53e5f004c2d35bb7f41dfd0", null);
+		LOG.info(set.size());
+		LOG.info(set.contains("ImportUsers2DB600000"));
 	}
 
 	public static String requestPageByGet(String urlStr, String outputFile) throws IOException {

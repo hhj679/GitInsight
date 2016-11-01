@@ -62,21 +62,24 @@ public class ImportUsers2DB {
 		
 		
 		
-		String path = "E:\\gitinsight\\data\\stars\\";
-		File pf = new File(path);
-		for(File sf : pf.listFiles()){
-			for(String jsonFile : sf.list()){
-				if(!jsonFile.endsWith(".txt")){
-					STARS_QUEUE.add(sf.getPath() + File.separator + jsonFile);
-				}
-			}
-		}
+//		String path = "F:\\gitinsight\\github\\data\\stars\\";
+//		File pf = new File(path);
+//		for(File sf : pf.listFiles()){
+//			for(String jsonFile : sf.list()){
+//				if(!jsonFile.endsWith(".txt")){
+//					STARS_QUEUE.add(sf.getPath() + File.separator + jsonFile);
+//				}
+//			}
+//		}
+//		
+//		LOG.info("STARS_QUEUE size: " + STARS_QUEUE.size());
+//		
+//		for(int i=0; i<2; i++) {
+//			new InsertDBThread().start();
+//		}
 		
-		LOG.info("STARS_QUEUE size: " + STARS_QUEUE.size());
 		
-		for(int i=0; i<2; i++) {
-			new InsertDBThread().start();
-		}
+		importUser2DB();
 	}
 	
 	static class InsertDBThread extends Thread {
@@ -170,7 +173,7 @@ public class ImportUsers2DB {
 //		JSONObject userObj = JSONObject.fromObject(userJSONStr);
 		
 		String sql = " insert into " + "project_stars" 
-				+ "(repo_full_name,user_id,starred_at)" 
+				+ "(repo_full_name,user_login,starred_at)" 
 				+ "values(?,?,?) ";
 		
 		Connection conn = null;
@@ -182,12 +185,12 @@ public class ImportUsers2DB {
 
 			//insert into table
 //			String fullName = dataMap.keySet().iterator().next();
+			DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 			for(Map<String, JSONObject> map : list){
 				String fullName = map.keySet().iterator().next();
 				JSONObject userObj = map.get(fullName);
 				pstmt.setString(1, fullName);
 				pstmt.setString(2, userObj.getJSONObject("user").getString("login"));
-				DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 				Date d = formatter.parse(userObj.getString("starred_at"));
 				pstmt.setTimestamp(3, new Timestamp(d.getTime()));
 				pstmt.addBatch();
@@ -316,6 +319,82 @@ public class ImportUsers2DB {
 			DBUtil.closeStatement(pstmt);
 			DBUtil.closeConn(conn);
 		}
+	}
+	
+	public static void importUser2DB(){
+		File pf = new File("F:\\gitinsight\\github\\data\\userinfo");
+		Map<String, JSONObject> usersMap = new HashMap<String, JSONObject>();
+		for(File sf : pf.listFiles()) {
+			try {
+				JSONObject obj = JSONObject.fromObject(FileUtils.readFileToString(sf, "UTF-8"));
+				usersMap.put(obj.getString("login"), obj);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		LOG.info("user's size:" + usersMap.size());
+		
+		String sql = " insert into users" 
+				+ "(login,git_id,avatar_url,gravatar_id,url,html_url,followers_url,following_url,gists_url,starred_url,subscriptions_url,organizations_url,repos_url,events_url,received_events_url,type,site_admin,name,company,blog,location,email,hireable,bio,public_repos,public_gists,followers,following,created_at,updated_at)" 
+				+ "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ";
+		
+		
+		int i=usersMap.size();
+		Connection conn = DBUtil.openConnection();
+		for(Entry<String, JSONObject> entry : usersMap.entrySet()) {
+			PreparedStatement pstmt = null;
+			
+			try{
+				JSONObject userObj = entry.getValue();
+				String userLogin = userObj.optString("login");
+				
+				pstmt = conn.prepareStatement(sql);
+				
+				//insert into table
+				pstmt.setString(1, userObj.optString("login"));
+				pstmt.setInt(2, userObj.optInt("id"));
+				pstmt.setString(3, BlankUtil.getString(userObj.optString("avatar_url")));
+				pstmt.setString(4, BlankUtil.getString(userObj.optString("gravatar_id")));
+				pstmt.setString(5, BlankUtil.getString(userObj.optString("url")));
+				pstmt.setString(6, BlankUtil.getString(userObj.optString("html_url")));
+				pstmt.setString(7, BlankUtil.getString(userObj.optString("followers_url")));
+				pstmt.setString(8, BlankUtil.getString(userObj.optString("following_url")));
+				pstmt.setString(9, BlankUtil.getString(userObj.optString("gists_url")));
+				pstmt.setString(10, BlankUtil.getString(userObj.optString("starred_url")));
+				pstmt.setString(11, BlankUtil.getString(userObj.optString("subscriptions_url")));
+				pstmt.setString(12, BlankUtil.getString(userObj.optString("organizations_url")));
+				pstmt.setString(13, BlankUtil.getString(userObj.optString("repos_url")));
+				pstmt.setString(14, BlankUtil.getString(userObj.optString("events_url")));
+				pstmt.setString(15, BlankUtil.getString(userObj.optString("received_events_url")));
+				pstmt.setString(16, userObj.optString("type"));
+				pstmt.setInt(17, userObj.optBoolean("site_admin")?1:0);
+				pstmt.setString(18, userObj.optString("name"));
+				pstmt.setString(19, BlankUtil.getString(userObj.optString("company")));
+				pstmt.setString(20, BlankUtil.getString(userObj.optString("blog")));
+				pstmt.setString(21, BlankUtil.getString(userObj.optString("location")));
+				pstmt.setString(22, BlankUtil.getString(userObj.optString("email")));
+				pstmt.setInt(23, userObj.optBoolean("hireable")?1:0);
+				pstmt.setString(24, BlankUtil.charString(BlankUtil.getObject(userObj.get("bio"))));
+				pstmt.setInt(25, userObj.optInt("public_repos"));
+				pstmt.setInt(26, userObj.optInt("public_gists"));
+				pstmt.setInt(27, userObj.optInt("followers"));
+				pstmt.setInt(28, userObj.optInt("following"));
+				pstmt.setString(29, userObj.optString("created_at"));
+				pstmt.setString(30, userObj.optString("updated_at"));
+				
+				pstmt.executeUpdate();
+				LOG.debug("insert user:" + userObj.optString("login") + " success! Remain:" + --i);
+				
+				//pstmt.clearParameters();
+			} catch(Exception e2) {
+				e2.printStackTrace();
+				LOG.error("error at:" + entry.getKey());
+			} finally {
+				DBUtil.closeStatement(pstmt);
+			}
+		}
+		DBUtil.closeConn(conn);
 	}
 	
 	public static void requestPorjectsAuthorAndImport(String projectName) {

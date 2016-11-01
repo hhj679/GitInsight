@@ -6,14 +6,20 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+import com.gitinsight.util.BlankUtil;
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
@@ -39,8 +45,11 @@ public class OrgsAndProjectsImport {
 		//导入项目信息
 //		importProjects("D:\\gitinsight\\doc\\orgs\\projects");
 		
-		String savePath = "E:\\gitinsight\\data\\repos\\";
+		String savePath = "D:\\gitinsight\\github\\data\\projects\\json\\";
 		File pfiles = new File(savePath);
+		
+		List<JSONObject> list = new ArrayList<JSONObject>();
+		List<String> idList = new ArrayList<String>();
 		
 		File[] languageFiles = pfiles.listFiles();
 		for(File lFile:languageFiles) {
@@ -53,13 +62,24 @@ public class OrgsAndProjectsImport {
 					for(int i=0; i<projects.size(); i++){
 						try{
 							JSONObject json = projects.getJSONObject(i);
-							importProject(json);
-						} catch(MySQLIntegrityConstraintViolationException e2){
-							LOG.debug("Duplicate entry!");
+							String id = String.valueOf(json.getInt("id"));
+							if(!idList.contains(id)){
+								list.add(json);
+								
+								idList.add(id);
+							}
 						} catch(Exception e1) {
 							e1.printStackTrace();
 							LOG.error("Exception", e1);
 						}
+					}
+					if(list.size()>=10000){
+						importProjectBatch(list);
+						
+						list = null;
+						list = new ArrayList<JSONObject>();
+						
+						LOG.info("commit 10000 per time!");
 					}
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
@@ -67,6 +87,13 @@ public class OrgsAndProjectsImport {
 					LOG.error("Exception", e);
 				}
 			}
+		}
+		LOG.info("projects count: " + list.size());
+		try {
+			importProjectBatch(list);
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -245,6 +272,71 @@ public class OrgsAndProjectsImport {
 		}
 	}
 	
+	public static void importProjectBatch(List<JSONObject> list) throws MySQLIntegrityConstraintViolationException {
+		String inertSQL = "insert into git_projects(git_id, name, full_name, owner_id, private, html_url, description, fork, url, git_url, ssh_url, clone_url, svn_url, homepage, created_at, updated_at, pushed_at, size, stargazers_count, watchers_count, language, has_issues, has_downloads, has_wiki, has_pages, forks_count, mirror_url, forks, open_issues, watchers, default_branch, network_count, subscribers_count)" 
+				+ " values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+
+		try{
+			conn = DBUtil.openConnection();
+			conn.setAutoCommit(false);
+			pstmt = conn.prepareStatement(inertSQL);
+
+			DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+			
+			for(JSONObject json : list){
+//				String git_id = map.keySet().iterator().next();
+//				JSONObject json = map.get(git_id);
+				
+				pstmt.setInt(1, json.getInt("id"));
+				pstmt.setString(2, json.getString("name"));
+				pstmt.setString(3, json.getString("full_name"));
+				pstmt.setString(4, json.getJSONObject("owner").getString("id"));
+				pstmt.setInt(5, (json.getBoolean("private")?1:0));
+				pstmt.setString(6, json.getString("html_url"));
+				pstmt.setString(7, BlankUtil.charString(getString(json.getString("description"))));
+				pstmt.setInt(8, (json.getBoolean("fork")?1:0));
+				pstmt.setString(9, json.getString("url"));
+				pstmt.setString(10, getString(json.getString("git_url")));
+				pstmt.setString(11, getString(json.getString("ssh_url")));
+				pstmt.setString(12, getString(json.getString("clone_url")));
+				pstmt.setString(13, getString(json.getString("svn_url")));
+				pstmt.setString(14, getString(json.getString("homepage")));
+				pstmt.setTimestamp(15, new Timestamp(formatter.parse(json.getString("created_at")).getTime()));
+				pstmt.setTimestamp(16, new Timestamp(formatter.parse(json.getString("updated_at")).getTime()));
+				pstmt.setTimestamp(17, new Timestamp(formatter.parse(json.getString("pushed_at")).getTime()));
+				pstmt.setInt(18, json.getInt("size"));
+				pstmt.setInt(19, json.getInt("stargazers_count"));
+				pstmt.setInt(20, json.getInt("watchers_count"));
+				pstmt.setString(21, json.getString("language"));
+				pstmt.setInt(22, (json.getBoolean("has_issues")?1:0));
+				pstmt.setInt(23, (json.getBoolean("has_downloads")?1:0));
+				pstmt.setInt(24, (json.getBoolean("has_wiki")?1:0));
+				pstmt.setInt(25, (json.getBoolean("has_pages")?1:0));
+				pstmt.setInt(26, json.getInt("forks_count"));
+				pstmt.setString(27, getString(json.getString("mirror_url")));
+				pstmt.setInt(28, json.getInt("forks"));
+				pstmt.setInt(29, json.getInt("open_issues"));
+				pstmt.setInt(30, json.getInt("watchers"));
+				pstmt.setString(31, json.getString("default_branch"));
+				pstmt.setInt(32, json.optInt("network_count"));
+				pstmt.setInt(33, json.optInt("subscribers_count"));
+				
+				pstmt.addBatch();
+			}
+			
+			pstmt.executeBatch();
+			conn.commit();
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			DBUtil.closeStatement(pstmt);
+			DBUtil.closeConn(conn);
+		}
+	}
+	
+	
 	public static void importProject(JSONObject json) throws MySQLIntegrityConstraintViolationException {
 		String inertSQL = "insert into git_projects(git_id, name, full_name, owner_id, private, html_url, description, fork, url, git_url, ssh_url, clone_url, svn_url, homepage, created_at, updated_at, pushed_at, size, stargazers_count, watchers_count, language, has_issues, has_downloads, has_wiki, has_pages, forks_count, mirror_url, forks, open_issues, watchers, default_branch, network_count, subscribers_count)" 
 				+ " values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -291,7 +383,7 @@ public class OrgsAndProjectsImport {
 		pmap4.put(json.getJSONObject("owner").get("id"), DBUtil.P_STRING);
 		pmap6.put((json.getBoolean("private")?1:0), DBUtil.P_INT);
 		pmap7.put(json.getString("html_url"), DBUtil.P_STRING);
-		pmap8.put(charString(getString(json.getString("description"))), DBUtil.P_STRING);
+		pmap8.put(BlankUtil.charString(getString(json.getString("description"))), DBUtil.P_STRING);
 		pmap9.put((json.getBoolean("fork")?1:0), DBUtil.P_INT);
 		pmap10.put(json.getString("url"), DBUtil.P_STRING);
 		pmap11.put(getString(json.getString("git_url")), DBUtil.P_STRING);
@@ -359,20 +451,6 @@ public class OrgsAndProjectsImport {
 		
 		
 		LOG.debug("Create project :" + json.getString("full_name") + " success!");
-	}
-	
-	public static String charString(String str) {
-		if(str == null) {
-			return null;
-		}
-		char []chars = str.toCharArray();
-		StringBuffer strBuffer = new StringBuffer();
-		for(char c : chars) {
-			if(c < 50000){
-				strBuffer.append(c);
-			}
-		}
-		return strBuffer.toString();
 	}
 	
 	public static void importProjects(String directFilePath) {

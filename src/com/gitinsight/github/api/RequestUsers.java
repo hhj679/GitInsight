@@ -6,11 +6,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Set;
+import java.util.TreeSet;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.gitinsight.util.HtmlUtil;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class RequestUsers {
@@ -27,89 +31,40 @@ public class RequestUsers {
 	public static void main(String[] args) throws IOException, ParseException {
 		// TODO Auto-generated method stub
 
-		String savePath = "F:\\gitinsight\\github\\data\\users\\";
+		Set<String> userSet = new TreeSet<String>();
+		String filePath = "F:\\gitinsight\\github\\data\\users\\";
+		String savePath = "F:\\gitinsight\\github\\data\\userinfo\\";
 		File saveFile = new File(savePath);
 		if(!saveFile.exists()) {
 			saveFile.mkdirs();
 		}
-		String usersJson = "";
-		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		//>=1000 important
-		for(int i=1;i<10; i++) {
+		File userFile = new File(filePath);
+		for(File uf : userFile.listFiles()) {
+			JSONObject uobj = JSONObject.fromObject(FileUtils.readFileToString(uf));
+			JSONArray uarray = uobj.getJSONArray("items");
+			for(int i=0; i<uarray.size();i++){
+				JSONObject u = uarray.getJSONObject(i);
+				userSet.add(u.getString("login"));
+			}
+		}
+		
+		LOG.info("user set size:" + userSet.size());
+		int fileNo = 0;
+		for(String login : userSet) {
 			try{
-				String tempStr = HtmlUtil.requestPageByGet("https://api.github.com/search/users?q=followers:%3E=1000+type:user&per_page=100&page=" + i + "&sort=followers&access_token=" + getToken(), 
-						savePath + "user1000_" + i);
-				Thread.sleep(4000);
-				if(tempStr == null || tempStr.trim().length()<=0){
-					break;
-				}
-				usersJson = tempStr;
+				HtmlUtil.requestPageByGet("https://api.github.com/users/" + login + "?access_token=" + getToken(), 
+						savePath + "user_" + login + "_" + fileNo + ".json");
+				LOG.info("user set size:" + fileNo++);
 			} catch(Exception e) {
 				LOG.error("request user error", e);	
 				e.printStackTrace();
 			}
 		}
-		LOG.debug(usersJson);
 		
-		//>=50
-		Date startDate = formatter.parse("2008-01-01");
-		Date nowDate = new Date();
-		
-		int fileNo = 1;
-		
-		HtmlUtil.requestPageByGet("https://api.github.com/search/users?q=followers:%3E=50+type:user+created:<" + formatter.format(startDate) + "&per_page=100&page=1&sort=joined&access_token=" + getToken(), 
-		savePath + "user_0");
-		
-		while(startDate.before(nowDate)){
-			try {
-				Calendar cd = Calendar.getInstance();
-				cd.setTime(startDate);
-				cd.add(Calendar.MONTH, 1);
-				
-				String startStr = formatter.format(startDate);
-				startDate = cd.getTime();
-				
-				cd.add(Calendar.DATE, -1);
-				
-				String tempStr = HtmlUtil.requestPageByGet("https://api.github.com/search/users?q=followers:%3E=50+type:user+created:\"" + startStr
-						+ "+..+" + formatter.format(cd.getTime()) + "\"&per_page=100&page=1&sort=joined&access_token=" + getToken(), 
-						savePath + "user_" + fileNo++);
-				JSONObject usersJsonObj = JSONObject.fromObject(tempStr);
-				int userCount = usersJsonObj.getInt("total_count");
-				
-				if(userCount>1000){
-					LOG.error("date: " + formatter.format(startDate) + " to " + formatter.format(cd.getTime()) + "return more than 1000!");
-					continue;
-				}
-				
-				int pageCount = userCount/100 + 1;
-				for(int i=2;i<=pageCount; i++) {
-					try{
-						tempStr = HtmlUtil.requestPageByGet("https://api.github.com/search/users?q=followers:%3E=50+type:user+created:\"" + startStr
-						+ "+..+" + formatter.format(cd.getTime()) + "\"&per_page=100&page=" + i + "&sort=joined&access_token=" + getToken(), 
-								savePath + "user_" + fileNo++);
-						Thread.sleep(4000);
-						if(tempStr == null || tempStr.trim().length()<=0){
-							break;
-						}
-						usersJson = tempStr;
-					} catch(Exception e) {
-						LOG.error("request user error", e);	
-						e.printStackTrace();
-					}
-				}
-				
-				Thread.sleep(4000);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
 	}
 
 	public static String getToken(){
-		int no = (int)(requireNo++/30);
+		int no = (int)(requireNo++/5000);
 		if(no>=API_ACCESS_TOKEN.length){
 			no = 0;
 			requireNo = 0;

@@ -10,6 +10,20 @@ public class BlankUtil {
 
 	}
 	
+	public static String charString(String str) {
+		if(str == null) {
+			return null;
+		}
+		char []chars = str.toCharArray();
+		StringBuffer strBuffer = new StringBuffer();
+		for(char c : chars) {
+			if(c < 50000){
+				strBuffer.append(c);
+			}
+		}
+		return strBuffer.toString();
+	}
+	
 	public static String getString(String str, boolean isTrim) {
 		if(str == null || str.equals(null)){
 			return "";
