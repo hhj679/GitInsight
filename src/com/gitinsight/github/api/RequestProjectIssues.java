@@ -13,14 +13,14 @@ import org.apache.log4j.Logger;
 import com.gitinsight.util.DBUtil;
 import com.gitinsight.util.HtmlUtil;
 
-public class RequestProjectStars {
-	public static Logger LOG = Logger.getLogger(RequestProjectStars.class);
+public class RequestProjectIssues {
+	public static Logger LOG = Logger.getLogger(RequestProjectIssues.class);
 	
 	private static ConcurrentLinkedQueue<String> REPOS_QUEUE = new ConcurrentLinkedQueue<String>();
 	private static ConcurrentLinkedQueue<String> TOKEN_QUEUE = new ConcurrentLinkedQueue<String>();
 //	private static ConcurrentLinkedQueue<String> REPOS_QUEUE = new ConcurrentLinkedQueue<String>();
 	
-	public RequestProjectStars() {
+	public RequestProjectIssues() {
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -28,22 +28,15 @@ public class RequestProjectStars {
 
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
-//		String languages[] = {"Java", "JavaScript", "CSS", "HTML", "Objective-C", "PHP", "Python", "Ruby", 
-//				"Scala", "Go", "R", "Swift", "C", "C++", "C#"};
 		
 //		String sql = "SELECT distinct p.full_name FROM insightdb.git_projects p";
 //		String[] reColsName = {"full_name"};
 //		List<Map<String, Object>> rsList = DBUtil.getTableData(sql, null, reColsName);
-//		List<String> reposList = new ArrayList<String>();
-//		LOG.info("request size:" + rsList.size());
-//		
 //		for(Map<String, Object> rsMap : rsList){
-//			reposList.add((String) rsMap.get("full_name"));
-//			
 //			REPOS_QUEUE.offer((String) rsMap.get("full_name"));
 //		}
 		
-		REPOS_QUEUE.addAll(FileUtils.readLines(new File("E:\\gitinsight\\data\\stars_error1.txt")));
+		REPOS_QUEUE.addAll(FileUtils.readLines(new File("E:\\gitinsight\\data\\issues_error.txt")));
 		
 		LOG.info("Queue size:" + REPOS_QUEUE.size());
 		
@@ -93,7 +86,7 @@ public class RequestProjectStars {
 		
 //		request(reposList);
 		
-		for(int i=0; i< 10 ; i ++) {
+		for(int i=0; i< 1 ; i ++) {
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
@@ -105,7 +98,7 @@ public class RequestProjectStars {
 	}
 	
 	public static void request() {
-		String savePath = "E:\\gitinsight\\data\\stars\\";
+		String savePath = "E:\\gitinsight\\data\\issues\\";
 		//String[] tokens = {TOKEN_QUEUE.poll(), TOKEN_QUEUE.poll()};
 		String token = TOKEN_QUEUE.poll();
 		int tempNum = 0;
@@ -119,9 +112,9 @@ public class RequestProjectStars {
 				if(!saveFile.exists()) {
 					saveFile.mkdirs();
 				} 
-				else {
-					continue;
-				}
+//				else {
+//					continue;
+//				}
 				
 				tempNum ++;
 				
@@ -132,8 +125,8 @@ public class RequestProjectStars {
 				
 				int fileNo = 2;
 				
-				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + token,//getToken(tokens), 
-						savePath + saveFilePath + "\\" + saveFilePath + "stars_1" + ".json");
+				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/repos/" + repo + "/issues/events?page=1&per_page=100&access_token=" + token,//getToken(tokens), 
+						savePath + saveFilePath + "\\" + saveFilePath + "issues_1" + ".json");
 				
 				
 				int lastPage = 1;
@@ -152,14 +145,14 @@ public class RequestProjectStars {
 				if(checkFile.list().length == 1) {
 					checkFile.delete();
 					REPOS_QUEUE.add(repo);
-					LOG.error("connect 3 tims still fail. The url is:" + "https://api.github.com/repos/" + repo + "/stargazers?page=1&per_page=100&access_token=" + token);//getToken(tokens));
+					LOG.error("connect 3 tims still fail. The url is:" + "https://api.github.com/repos/" + repo + "/issues/events?page=1&per_page=100&access_token=" + token);//getToken(tokens));
 				}
 				
 
 				for(int i=2; i<=lastPage; i++){
 					Thread.sleep(800);
-					HtmlUtil.requestPageByGet("https://api.github.com/repos/" + repo + "/stargazers?page=" + i +"&per_page=100&access_token=" + token,//getToken(tokens), 
-							savePath + saveFilePath + "\\" + saveFilePath + "stars_" + (fileNo++) + ".json");
+					HtmlUtil.requestPageByGet("https://api.github.com/repos/" + repo + "/issues/events?page=" + i +"&per_page=100&access_token=" + token,//getToken(tokens), 
+							savePath + saveFilePath + "\\" + saveFilePath + "issues" + (fileNo++) + ".json");
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -297,7 +290,7 @@ public class RequestProjectStars {
 		}
 		   // ç¬¬äºŒä¸ªçº¿ç¨‹å…¥å�£
 		   public void run() {
-			   RequestProjectStars.request();
+			   RequestProjectIssues.request();
 		   }
 		}
 }

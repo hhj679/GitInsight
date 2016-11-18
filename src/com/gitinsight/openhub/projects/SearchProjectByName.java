@@ -27,7 +27,7 @@ public class SearchProjectByName {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String savePath = "F:\\gitinsight\\openhub\\data\\projects\\";
+		String savePath = "E:\\gitinsight\\data\\openhub\\projects\\";
 		File saveFile = new File(savePath);
 		if(!saveFile.exists()) {
 			saveFile.mkdirs();
@@ -41,10 +41,16 @@ public class SearchProjectByName {
 		for(Map<String, Object> rsMap : rsList){
 			try {
 				String projectName = (String) rsMap.get("name");
+				File f = new File(savePath + projectName + ".xml");
+				if(f.exists()){
+					continue;
+				}
+				
 				String api_key = getToken();
 				if(api_key == null) {
 					break;
 				}
+				
 				HtmlUtil.requestPageByGet("https://www.openhub.net/projects.xml?query=" + projectName + "&api_key=" + api_key,
 						savePath + projectName + ".xml");
 			} catch (IOException e) {

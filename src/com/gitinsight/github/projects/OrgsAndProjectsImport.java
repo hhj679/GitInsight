@@ -25,6 +25,7 @@ import com.gitinsight.util.HtmlUtil;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 public class OrgsAndProjectsImport {
@@ -45,7 +46,7 @@ public class OrgsAndProjectsImport {
 		//导入项目信息
 //		importProjects("D:\\gitinsight\\doc\\orgs\\projects");
 		
-		String savePath = "D:\\gitinsight\\github\\data\\projects\\json\\";
+		String savePath = "E:\\gitinsight\\data\\repos\\json\\";
 		File pfiles = new File(savePath);
 		
 		List<JSONObject> list = new ArrayList<JSONObject>();
@@ -56,8 +57,8 @@ public class OrgsAndProjectsImport {
 			File[] jsonFiles = lFile.listFiles();
 			for(File jsonFile:jsonFiles) {
 				try {
-					List<String> lines = FileUtils.readLines(jsonFile);
-					JSONObject tjson = JSONObject.fromObject(lines.get(0));
+					String lines = FileUtils.readFileToString(jsonFile);
+					JSONObject tjson = JSONObject.fromObject(lines);
 					JSONArray projects = tjson.getJSONArray("items");
 					for(int i=0; i<projects.size(); i++){
 						try{
@@ -81,10 +82,14 @@ public class OrgsAndProjectsImport {
 						
 						LOG.info("commit 10000 per time!");
 					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
+				}catch(JSONException e){
 					e.printStackTrace();
 					LOG.error("Exception", e);
+					LOG.error("error at file:" + jsonFile.getPath());
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					LOG.error("Exception", e1);
 				}
 			}
 		}

@@ -3,10 +3,13 @@ package com.gitinsight.github.api;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.gitinsight.util.DBUtil;
@@ -30,49 +33,88 @@ public class RequestUserFollowers {
 //		String languages[] = {"Java", "JavaScript", "CSS", "HTML", "Objective-C", "PHP", "Python", "Ruby", 
 //				"Scala", "Go", "R", "Swift", "C", "C++", "C#"};
 		
-		String sql = "SELECT distinct p.full_name FROM insightdb.git_projects p";
-		String[] reColsName = {"full_name"};
+		String sql = "SELECT count(p.user_login) counts FROM insightdb.project_stars p";
+		String[] reColsName = {"counts"};
 		List<Map<String, Object>> rsList = DBUtil.getTableData(sql, null, reColsName);
-		List<String> reposList = new ArrayList<String>();
-		LOG.info("request size:" + rsList.size());
+		long count = (long) rsList.get(0).get("counts");
 		
-		for(Map<String, Object> rsMap : rsList){
-			reposList.add((String) rsMap.get("full_name"));
+		long pageSize = 50000;
+		int pages = (int) (count/pageSize + 1);
+		String[] reColsName1 = {"user_login"};
+		
+		Set<String> set = new HashSet<String>();
+		
+		for(int i=1; i<=pages; i++) {
+			LOG.info("page:" + i);
+			long lastPage = ((i-1)*pageSize + 1);
+//			if(i == pages){
+//				lastPage = count;
+//			}
+			sql = "select user_login from insightdb.project_stars where id <= (select id from insightdb.project_stars order by id desc LIMIT " 
+					+ lastPage + ",1) order by id desc LIMIT " + pageSize + ";";
+			List<Map<String, Object>> rsList1 = null;
+			try{
+				rsList1 = DBUtil.getTableData(sql, null, reColsName1);
+			} catch(Exception e){
+				e.printStackTrace();
+			}
+			if(rsList1!=null){
+				for(Map<String, Object> rsMap : rsList1){
+//					USERS_QUEUE.offer((String) rsMap.get("user_login"));
+					set.add((String) rsMap.get("user_login"));
+				}
+				FileUtils.writeLines(new File("E:\\gitinsight\\data\\users\\users_" + i + ".txt"), rsList1);
+				rsList1 = null;
+			}
 			
-			USERS_QUEUE.offer((String) rsMap.get("full_name"));
 		}
+		USERS_QUEUE.addAll(set);
+//		set = null;
+		
+//		List<String> reposList = new ArrayList<String>();
+//		LOG.info("request size:" + rsList.size());
+//		
+//		for(Map<String, Object> rsMap : rsList){
+//			reposList.add((String) rsMap.get("full_name"));
+//			
+//			USERS_QUEUE.offer((String) rsMap.get("full_name"));
+//		}
 		
 		LOG.info("Queue size:" + USERS_QUEUE.size());
 		
-		TOKEN_QUEUE.offer("a1bfbc6b34002b8b39a1896cc27c02b72774068d");
-		TOKEN_QUEUE.offer("c36cb7bb1659efbb8e4a37fd73ce56b7b70405e5");
-		TOKEN_QUEUE.offer("081e6094e50cf752b20a5eeeea88e2ff827669b1");
-		TOKEN_QUEUE.offer("f54d408b200223ba6da017e0af49bb1c1956dae4");
-		TOKEN_QUEUE.offer("d745cbff4026cea4d5eb680149b53c5c9cf75c76");
-		TOKEN_QUEUE.offer("0c290ec746a452ab1c6ef348ebaab800aefde657");
-		TOKEN_QUEUE.offer("dc6c5c6cdbb89f70b2fe1f0d9c114d8bd4ebbc73");
-		TOKEN_QUEUE.offer("c491e3cad47b26731879e36bf9beaf0f1b4150cf");
-		TOKEN_QUEUE.offer("6fca610d9d57a1a43083f2f85db7eaa8b7ec4db3");
-		TOKEN_QUEUE.offer("14950d17b2a9b586a09874662a3526fb0b684615");
+		TOKEN_QUEUE.offer("abc57c2a8ac4ede2fb1551dcf699257fa6dad13c");
+		TOKEN_QUEUE.offer("04bb9a7506ab600ce53e5f004c2d35bb7f41dfd0");
+		TOKEN_QUEUE.offer("f81ef6ec593ca3cea7b2cbddc72cc1d03f47e535");
+		
+		TOKEN_QUEUE.offer("6d12e500f661490fbe978100dfbd7ede32648f14");
+		TOKEN_QUEUE.offer("cf8ee7d276e027ffe96808403881c6ceb5e7d104");
+		TOKEN_QUEUE.offer("1975c6cc602fa5e422a4eeea739a96538c0f4725");
+		
+		TOKEN_QUEUE.offer("00737e62d82bf610f0b515189d43e09b8282ef47");
+		TOKEN_QUEUE.offer("ede65a8a32b24acbb4d134f25c44c8c5a0a5cf4c");
+		TOKEN_QUEUE.offer("b41e59078a547a53fd12eb1d3ff377218364101a");
+		
+		TOKEN_QUEUE.offer("b50b4fabe5930370a726a8a8b5b3bd17ca2de368");
 		
 //		reposList.add("0x00A/paramify");
 //		reposList.add("0x00A/Porter");
 		
 //		request(reposList);
 		
-		for(int i=0; i< 5 ; i ++) {
+		for(int i=0; i< 10 ; i ++) {
 			new CrawlThread().start();
 		}
 	}
 	
 	public static void request() {
-		String savePath = "E:\\opensource\\github\\data\\followers\\";
-		String[] tokens = {TOKEN_QUEUE.poll(), TOKEN_QUEUE.poll()};
+		String savePath = "E:\\gitinsight\\data\\followers\\";
+		String[] tokens = {TOKEN_QUEUE.poll()};
 		while(!USERS_QUEUE.isEmpty()) {
 			try {
+				Thread.sleep(800);
 				String user_login = USERS_QUEUE.poll();
 				
-				File saveFile = new File(savePath);
+				File saveFile = new File(savePath + user_login);
 				if(!saveFile.exists()) {
 					saveFile.mkdirs();
 				}
@@ -80,7 +122,7 @@ public class RequestUserFollowers {
 				int fileNo = 2;
 				
 				String [] reInfo = HtmlUtil.requestPageByGetReLink("https://api.github.com/users/" + user_login + "/followers?page=1&per_page=100&access_token=" + getToken(tokens), 
-						savePath + user_login + "followers_1" + ".json");
+						savePath + user_login + File.separator + user_login + "_followers_1" + ".json");
 				
 				String link = reInfo[1];
 				
@@ -89,11 +131,13 @@ public class RequestUserFollowers {
 				if(reInfo!=null && reInfo[1] != null) {
 					lastPage = Integer.valueOf(getLastPageByLink(link));
 				}
+				
+				FileUtils.writeStringToFile(new File(savePath + user_login + File.separator + "pages.txt"), String.valueOf(lastPage));
 
 				for(int i=2; i<=lastPage; i++){
 					HtmlUtil.requestPageByGet("https://api.github.com/users/" + user_login + "/followers?page=" + i +"&per_page=100&access_token=" + getToken(tokens), 
-							savePath + user_login + "followers_" + (fileNo++) + ".json");
-					Thread.sleep(1000);
+							savePath + user_login + File.separator + user_login+ "_followers_" + (fileNo++) + ".json");
+					Thread.sleep(800);
 				}
 			} catch (Exception e) {
 				// TODO Auto-generated catch block

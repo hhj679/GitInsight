@@ -2,26 +2,19 @@ package com.gitinsight.github.check;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 public class CheckRepoStars {
-
+	public static Logger LOG = Logger.getLogger(CheckRepoStars.class);
 	public CheckRepoStars() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public static void main(String[] args) throws ParseException {
+	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String s = "2016-02-17T19:27:26Z";
-		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-		Date d = formatter.parse(s);
-
-		System.out.println("Formatted Date in current time zone = " + formatter.format(d));
+		check("E:\\gitinsight\\data\\issues\\");
 	}
 	
 	public static void check(String filePath) {
@@ -35,10 +28,11 @@ public class CheckRepoStars {
 					int page = Integer.valueOf(pages);
 					if(page+1 != sf.list().length){
 						for(int p=1; p<=page; p++){
-							File jsonFile = new File(sf.getPath() + File.separator + sf.getName() + "stars_" + p + ".json");
+							File jsonFile = new File(sf.getPath() + File.separator + sf.getName() + "issues_" + p + ".json");
 							if(!jsonFile.exists()){
-								System.out.println("error at: " + jsonFile.getName());
-								FileUtils.writeStringToFile(new File("E:\\opensource\\github\\data\\stars\\error.txt"), sf.getName().replace("_qqq;;;_", "/") + "\r\n", true);
+								FileUtils.writeStringToFile(new File("E:\\gitinsight\\data\\issues_error.txt"), sf.getName().replace("_qqq;;;_", "/") + "\r\n", true);
+								LOG.info("error at: " + jsonFile.getName() + "page: " + p);
+//								FileUtils.deleteDirectory(sf);
 								break;
 							}
 						}
@@ -50,7 +44,9 @@ public class CheckRepoStars {
 				
 			} else {
 				try {
-					FileUtils.writeStringToFile(new File("E:\\opensource\\github\\data\\stars\\error.txt"), sf.getName().replace("_qqq;;;_", "/") + "\r\n", true);
+					LOG.info("error at directory: " + sf.getName());
+					FileUtils.writeStringToFile(new File("E:\\gitinsight\\data\\issues_error.txt"), sf.getName().replace("_qqq;;;_", "/") + "\r\n", true);
+//					FileUtils.deleteDirectory(sf);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
